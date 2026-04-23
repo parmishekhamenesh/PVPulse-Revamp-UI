@@ -7596,7 +7596,7 @@ body.light-mode .csm-btn--cancel:hover { border-color: rgba(1,87,214,0.30); colo
     setTimeout(() => {
       node.classList.remove('visible');
       setTimeout(() => node.remove(), 180);
-    }, 2200);
+    }, 8000);
   }
 
   function openConfirm({ title='Confirm alert action', description, confirmLabel='Acknowledge', onConfirm }){
@@ -10978,19 +10978,21 @@ body[data-kiosk="1"] #kioskOverlay {
 
 /* ── Screen 3: two charts SIDE BY SIDE ───────────────────────────── */
 #ks3 .kiosk-content .k-charts-row {
-  flex: 0 0 auto; display: grid;
+  flex: 1; display: grid;
   grid-template-columns: 1fr 1fr; gap: 14px;
+  min-height: 0;
 }
 #ks3 .kiosk-content .k-chart-slot {
   min-height: 0; display: flex; flex-direction: column;
 }
 #ks3 .kiosk-content .k-chart-slot .panel.chart-card {
-  display: flex; flex-direction: column; padding: 18px;
+  display: flex; flex-direction: column; padding: 18px; flex: 1; min-height: 0;
 }
-/* line-chart: intrinsic aspect ratio (1000×420 = 42%) — no stretch */
+/* line-chart fills remaining card space — no fixed aspect ratio in kiosk */
 #ks3 .kiosk-content .k-chart-slot .line-chart {
-  position: relative; width: 100%; padding-bottom: 42%; height: 0;
-  flex: 0 0 auto; border-radius: 18px; overflow: hidden;
+  position: relative; width: 100%; flex: 1; min-height: 0;
+  height: auto; padding-bottom: 0;
+  border-radius: 14px; overflow: hidden;
 }
 #ks3 .kiosk-content .k-chart-slot .line-chart svg {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
@@ -11256,7 +11258,7 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
             <div class="line-chart" id="kioskPerfChart" data-kiosk-chart="performance">
               <div class="axis-label y">MW</div>
               <div class="axis-label x">Time of Day</div>
-              <svg id="kioskPerfSvg" viewBox="0 0 1000 420" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+              <svg id="kioskPerfSvg" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true"></svg>
             </div>
           </section>
         </div>
@@ -11274,7 +11276,7 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
             <div class="line-chart" id="kioskFlowChart" data-kiosk-chart="realtime">
               <div class="axis-label y">kWh</div>
               <div class="axis-label x">Time of Day</div>
-              <svg id="kioskFlowSvg" viewBox="0 0 1000 320" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+              <svg id="kioskFlowSvg" viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true"></svg>
             </div>
           </section>
         </div>
@@ -11655,18 +11657,84 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
     _setText('scatterLegendTargetSitesInline', sv.tgtSitesInline, document);
     _setText('scatterLegendUnderSitesInline', sv.undSitesInline, document);
 
-    // Populate chart SVGs
-    var pSvg = document.getElementById('kioskPerfSvg');
-    if (pSvg && DATA.perfSVGHTML) {
-      pSvg.setAttribute('viewBox', DATA.perfVB);
-      pSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      pSvg.innerHTML = DATA.perfSVGHTML;
+    // Populate chart SVGs — render fresh into kiosk SVG elements at correct dimensions.
+    // Cloning innerHTML from the dashboard SVGs bakes in wrong pixel coords.
+    // Instead we call renderChartSvg directly once screen 3 is visible (so dims are real).
+    function _renderKioskCharts() {
+      var perfEl  = document.getElementById('kioskPerfChart');
+      var flowEl  = document.getElementById('kioskFlowChart');
+      var pSvg    = document.getElementById('kioskPerfSvg');
+      var fSvg    = document.getElementById('kioskFlowSvg');
+      if (!perfEl || !flowEl || !pSvg || !fSvg) return;
+
+      // Use getBoundingClientRect for real layout dimensions (works even inside flex)
+      var pRect = perfEl.getBoundingClientRect();
+      var fRect = flowEl.getBoundingClientRect();
+      var pW = Math.max(pRect.width,  400);
+      var pH = Math.max(pRect.height, 320);
+      var fW = Math.max(fRect.width,  400);
+      var fH = Math.max(fRect.height, 320);
+
+      // If dimensions are clearly wrong (layout not settled), try again
+      if (pRect.width < 100 || fRect.width < 100) {
+        setTimeout(_renderKioskCharts, 120);
+        return;
+      }
+
+      // Temporarily override getChartPlotBox for kiosk — reduced bottom padding
+      // so x-axis labels don't crowd/overlap at kiosk chart sizes
+      var _origPlotBox = null;
+      if (typeof getChartPlotBox === 'function') {
+        _origPlotBox = getChartPlotBox;
+        window.getChartPlotBox = function() { return { left: 68, right: 22, top: 26, bottom: 68 }; };
+      }
+
+      if (typeof getActiveChartConfig === 'function' && typeof renderChartSvg === 'function') {
+        var perfCfg = getActiveChartConfig('performance');
+        var flowCfg = getActiveChartConfig('realtime');
+        var origPerfId = perfCfg.svgId; var origFlowId = flowCfg.svgId;
+        perfCfg.svgId = 'kioskPerfSvg'; flowCfg.svgId = 'kioskFlowSvg';
+        renderChartSvg(perfCfg, pW, pH);
+        renderChartSvg(flowCfg, fW, fH);
+        perfCfg.svgId = origPerfId; flowCfg.svgId = origFlowId;
+      } else if (DATA.perfSVGHTML && DATA.flowSVGHTML) {
+        // Fallback: inject cloned SVG with preserveAspectRatio=none so it fills the box
+        pSvg.setAttribute('viewBox', DATA.perfVB);
+        pSvg.setAttribute('preserveAspectRatio', 'none');
+        pSvg.innerHTML = DATA.perfSVGHTML;
+        fSvg.setAttribute('viewBox', DATA.flowVB);
+        fSvg.setAttribute('preserveAspectRatio', 'none');
+        fSvg.innerHTML = DATA.flowSVGHTML;
+      }
+
+      // Restore original plot box function
+      if (_origPlotBox) window.getChartPlotBox = _origPlotBox;
+
+      // Force SVGs to fill their containers with no letterboxing
+      [pSvg, fSvg].forEach(function(s) {
+        s.setAttribute('preserveAspectRatio', 'none');
+        s.style.position = 'absolute';
+        s.style.inset = '0';
+        s.style.width = '100%';
+        s.style.height = '100%';
+      });
     }
-    var fSvg = document.getElementById('kioskFlowSvg');
-    if (fSvg && DATA.flowSVGHTML) {
-      fSvg.setAttribute('viewBox', DATA.flowVB);
-      fSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      fSvg.innerHTML = DATA.flowSVGHTML;
+    window._renderKioskCharts = _renderKioskCharts;
+
+    // Watch for screen 3 activation and re-render at correct size
+    var ks3El = document.getElementById('ks3');
+    if (ks3El) {
+      var ks3Observer = new MutationObserver(function() {
+        if (ks3El.classList.contains('k-active')) {
+          // Double rAF + timeout ensures flex layout and CSS transitions have fully settled
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              setTimeout(_renderKioskCharts, 200);
+            });
+          });
+        }
+      });
+      ks3Observer.observe(ks3El, { attributes: true, attributeFilter: ['class'] });
     }
 
     // Init Leaflet kiosk map
@@ -11681,6 +11749,13 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
 
     // Start rotation
     _startRotation();
+
+    // Pre-render screen 3 charts after a short delay so layout is ready when user navigates there
+    setTimeout(function() {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(_renderKioskCharts);
+      });
+    }, 400);
 
     // Keyboard nav
     document.addEventListener('keydown', function(e) {
@@ -12503,11 +12578,13 @@ body[data-kiosk="1"] #ks2 .k-scatter-slot .scatter-kpi-row { display: none !impo
 /* ══ SCREEN 3 — Two charts ══════════════════════════════════════
    Charts row: auto-height (charts define it). No flex:1 stretch.    */
 body[data-kiosk="1"] #ks3 .kiosk-content { gap: 14px !important; }
-body[data-kiosk="1"] #ks3 .k-charts-row { flex: 0 0 auto !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
-body[data-kiosk="1"] #ks3 .k-chart-slot { display: flex !important; flex-direction: column !important; }
-body[data-kiosk="1"] #ks3 .k-chart-slot .chart-card { display: flex !important; flex-direction: column !important; padding: 18px 20px !important; }
+body[data-kiosk="1"] #ks3 .k-charts-row { flex: 1 !important; min-height: 0 !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
+body[data-kiosk="1"] #ks3 .k-chart-slot { display: flex !important; flex-direction: column !important; min-height: 0 !important; flex: 1 !important; }
+body[data-kiosk="1"] #ks3 .k-chart-slot .chart-card { display: flex !important; flex-direction: column !important; padding: 18px 20px !important; flex: 1 !important; min-height: 0 !important; }
 body[data-kiosk="1"] #ks3 .k-chart-slot .section-head { flex: 0 0 auto !important; margin-bottom: 10px !important; min-height: unset !important; }
 body[data-kiosk="1"] #ks3 .k-chart-slot .chart-legend { flex: 0 0 auto !important; position: static !important; font-size: 12px !important; gap: 10px !important; margin-bottom: 10px !important; }
+body[data-kiosk="1"] #ks3 .k-chart-slot .line-chart { flex: 1 !important; min-height: 260px !important; position: relative !important; width: 100% !important; height: 0 !important; padding-bottom: 0 !important; border-radius: 14px !important; overflow: hidden !important; }
+body[data-kiosk="1"] #ks3 .k-chart-slot .line-chart svg { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; display: block !important; }
 
 /* ══ SCREEN 4 — Alerts (5 each, natural height) ══════════════════ */
 body[data-kiosk="1"] #ks4 .kiosk-content { gap: 14px !important; }
@@ -13095,6 +13172,62 @@ body.light-mode .scatter-hover-tooltip h4 { color: #FFFFFF !important; }
 body.light-mode .scatter-hover-tooltip .row { color: #FFFFFF !important; }
 body.light-mode .scatter-hover-tooltip .row span:last-child { color: #FFFFFF !important; font-weight: 600 !important; }
 body.light-mode .scatter-hover-tooltip .k { color: rgba(255,255,255,0.58) !important; }
+
+</style>
+
+<style id="alerts-modal-light-fix">
+/* ══════════════════════════════════════════════════════════════════
+   ALERTS CONFIRM MODAL — light mode text + button visibility fix
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Modal shell */
+body.light-mode .alerts-modal {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F7FB 100%) !important;
+  border-color: rgba(48,78,118,0.14) !important;
+  box-shadow: 0 24px 56px rgba(14,28,52,0.14) !important;
+}
+
+/* Icon circle */
+body.light-mode .alerts-modal-icon {
+  background: rgba(232,155,0,0.10) !important;
+  border-color: rgba(232,155,0,0.22) !important;
+  color: #B87C00 !important;
+}
+
+/* Title */
+body.light-mode .alerts-modal h3 {
+  color: #0E1520 !important;
+}
+
+/* Description paragraph */
+body.light-mode .alerts-modal p {
+  color: #344560 !important;
+}
+
+/* Cancel button */
+body.light-mode .modal-btn {
+  background: #FFFFFF !important;
+  border-color: rgba(48,78,118,0.20) !important;
+  color: #344560 !important;
+}
+body.light-mode .modal-btn:hover {
+  background: #F0F4FA !important;
+  border-color: rgba(48,78,118,0.32) !important;
+  color: #0E1520 !important;
+}
+
+/* Primary action button (Acknowledge / Disable All) */
+body.light-mode .modal-btn.primary {
+  background: rgba(1,87,214,0.12) !important;
+  border-color: rgba(1,87,214,0.28) !important;
+  color: #0044C0 !important;
+  font-weight: 600 !important;
+}
+body.light-mode .modal-btn.primary:hover {
+  background: rgba(1,87,214,0.20) !important;
+  border-color: rgba(1,87,214,0.40) !important;
+  color: #003399 !important;
+}
 
 </style>
 </body>

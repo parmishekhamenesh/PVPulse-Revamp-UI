@@ -12483,12 +12483,22 @@ body.light-mode .scatter-category-modal *:not(.csm-fill):not(.csm-track):not(.cs
 
 <style id="v23-kiosk-fix">
 /* ══════════════════════════════════════════════════════════════════
-   KIOSK LAYOUT — natural component heights. NO stretching.
-   Cards border wraps their content. Charts use intrinsic aspect ratio.
+   KIOSK LAYOUT — scale the entire overlay to match 150% zoom look.
+   zoom: 1.5 on a 66.7%-scaled wrapper = same visual as 150% browser zoom
+   but without OS-level stretching artifacts.
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── Core ──────────────────────────────────────────────────────── */
-body[data-kiosk="1"] .kiosk-screen { align-items: stretch !important; justify-content: center !important; }
+/* ── Core: zoom the kiosk overlay to 150% size ─────────────────── */
+body[data-kiosk="1"] #kioskOverlay {
+  zoom: 1.5 !important;
+  width: calc(100vw / 1.5) !important;
+  height: calc(100vh / 1.5) !important;
+  transform-origin: top left !important;
+}
+body[data-kiosk="1"] .kiosk-screen {
+  align-items: stretch !important;
+  justify-content: center !important;
+}
 body[data-kiosk="1"] .kiosk-content {
   height: 100% !important; max-height: 100% !important;
   padding: 16px 0 14px !important; gap: 14px !important;
@@ -12560,8 +12570,7 @@ body[data-kiosk="1"] #ks1 .k-map-slot .section-head { flex: 0 0 auto !important;
 body[data-kiosk="1"] #ks1 .k-map-slot .map-wrap { flex: 1 !important; min-height: 0 !important; height: auto !important; position: relative !important; overflow: hidden !important; }
 body[data-kiosk="1"] #ks1 .k-map-slot #kioskLeafletMap { position: absolute !important; inset: 0 !important; min-height: unset !important; border-radius: 18px !important; overflow: hidden !important; }
 
-/* ══ SCREEN 2 — Priority + Scatter ══════════════════════════════
-   Both slots: auto-height. Scatter card border wraps chart tightly. */
+/* ══ SCREEN 2 — Priority + Scatter ══════════════════════════════ */
 body[data-kiosk="1"] #ks2 .kiosk-content { gap: 14px !important; }
 body[data-kiosk="1"] #ks2 .k-priority-slot { flex: 0 0 auto !important; }
 body[data-kiosk="1"] #ks2 .k-priority-slot .priority-card { padding: 16px 20px !important; }
@@ -12575,8 +12584,7 @@ body[data-kiosk="1"] #ks2 .k-scatter-slot .scatter-subhead { flex: 0 0 auto !imp
 body[data-kiosk="1"] #ks2 .k-scatter-slot .scatter-layout { display: block !important; }
 body[data-kiosk="1"] #ks2 .k-scatter-slot .scatter-kpi-row { display: none !important; }
 
-/* ══ SCREEN 3 — Two charts ══════════════════════════════════════
-   Charts row: auto-height (charts define it). No flex:1 stretch.    */
+/* ══ SCREEN 3 — Two charts fill full height ══════════════════════ */
 body[data-kiosk="1"] #ks3 .kiosk-content { gap: 14px !important; }
 body[data-kiosk="1"] #ks3 .k-charts-row { flex: 1 !important; min-height: 0 !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
 body[data-kiosk="1"] #ks3 .k-chart-slot { display: flex !important; flex-direction: column !important; min-height: 0 !important; flex: 1 !important; }
@@ -12586,7 +12594,7 @@ body[data-kiosk="1"] #ks3 .k-chart-slot .chart-legend { flex: 0 0 auto !importan
 body[data-kiosk="1"] #ks3 .k-chart-slot .line-chart { flex: 1 !important; min-height: 260px !important; position: relative !important; width: 100% !important; height: 0 !important; padding-bottom: 0 !important; border-radius: 14px !important; overflow: hidden !important; }
 body[data-kiosk="1"] #ks3 .k-chart-slot .line-chart svg { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; display: block !important; }
 
-/* ══ SCREEN 4 — Alerts (5 each, natural height) ══════════════════ */
+/* ══ SCREEN 4 — Alerts ══════════════════════════════════════════ */
 body[data-kiosk="1"] #ks4 .kiosk-content { gap: 14px !important; }
 body[data-kiosk="1"] #ks4 .k-alerts-cols { flex: 0 0 auto !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
 body[data-kiosk="1"] #ks4 .k-alerts-cols .panel { flex: 0 0 auto !important; overflow: hidden !important; padding: 20px 22px !important; display: flex !important; flex-direction: column !important; }

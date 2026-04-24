@@ -11927,7 +11927,7 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
 
   /* ── Rotation ──────────────────────────────────────────────────── */
   var _cur = 0, _paused = false, _pauseTimer = null, _raf = null, _progStart = null;
-  var TOTAL_MS = 20000;
+  var TOTAL_MS = 10000;
 
   function _goTo(idx, manual) {
     if (idx === _cur && !manual) return;

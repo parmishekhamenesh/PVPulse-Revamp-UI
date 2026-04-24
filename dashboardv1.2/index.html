@@ -11309,7 +11309,7 @@ body[data-kiosk="1"] .kiosk-screen [draggable] { cursor: default; }
         <section class="panel table-card" style="overflow:hidden;">
           <div class="table-toolbar" style="margin-bottom:12px;">
             <div>
-              <div class="table-title">Portfolio Sites (Ranked by severity)</div>
+              <div class="table-title">Portfolio Sites</div>
               <div class="table-subtitle">Showing Critical and Warning sites first · Read-only kiosk view</div>
             </div>
           </div>
@@ -12599,18 +12599,87 @@ body[data-kiosk="1"] #ks4 .alert-desc  { font-size: 12px !important; margin-top:
 body[data-kiosk="1"] #ks4 .alert-time  { font-size: 12px !important; margin-top: 4px !important; }
 
 /* ══ SCREEN 5 — Table (15 rows, compact, card wraps content) ══ */
-body[data-kiosk="1"] #ks5 .kiosk-content { gap: 14px !important; justify-content: flex-start !important; }
-body[data-kiosk="1"] #ks5 .k-table-slot { flex: 0 0 auto !important; display: block !important; }
-body[data-kiosk="1"] #ks5 .k-table-slot .panel { display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 18px 20px !important; }
-body[data-kiosk="1"] #ks5 .table-toolbar { flex: 0 0 auto !important; margin-bottom: 10px !important; }
-body[data-kiosk="1"] #ks5 .table-title    { font-size: 15px !important; font-weight: 700 !important; }
-body[data-kiosk="1"] #ks5 .table-subtitle { font-size: 12px !important; margin-top: 3px !important; }
-body[data-kiosk="1"] #ks5 #kioskTableWrap { overflow: auto !important; max-height: 70vh !important; }
-body[data-kiosk="1"] #kioskTableWrap table { width: 100% !important; min-width: unset !important; table-layout: fixed !important; border-collapse: collapse !important; }
-body[data-kiosk="1"] #kioskTableWrap thead th { padding: 9px 8px !important; font-size: 11px !important; font-weight: 600 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; letter-spacing: 0.04em !important; text-transform: uppercase !important; position: sticky !important; top: 0 !important; background: color-mix(in srgb, var(--panel) 96%, black 4%) !important; border-bottom: 1px solid var(--border) !important; }
+/* ── Screen 5: fill full viewport height, TV-scale text ── */
+body[data-kiosk="1"] #ks5 .kiosk-content {
+  gap: 14px !important;
+  justify-content: flex-start !important;
+  height: 100% !important;
+}
+body[data-kiosk="1"] #ks5 .k-table-slot {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+body[data-kiosk="1"] #ks5 .k-table-slot .panel {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 28px 32px !important;
+}
+body[data-kiosk="1"] #ks5 .table-toolbar {
+  flex: 0 0 auto !important;
+  margin-bottom: 16px !important;
+}
+body[data-kiosk="1"] #ks5 .table-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+body[data-kiosk="1"] #ks5 .table-subtitle {
+  font-size: 14px !important;
+  margin-top: 5px !important;
+}
+body[data-kiosk="1"] #ks5 #kioskTableWrap {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  max-height: none !important;
+}
+body[data-kiosk="1"] #kioskTableWrap table {
+  width: 100% !important;
+  min-width: unset !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+body[data-kiosk="1"] #kioskTableWrap thead th {
+  padding: 18px 14px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  position: sticky !important;
+  top: 0 !important;
+  background: color-mix(in srgb, var(--panel) 96%, black 4%) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+body[data-kiosk="1"] #kioskTableWrap table { height: 100% !important; }
+body[data-kiosk="1"] #kioskTableWrap tbody { height: 100% !important; }
 body[data-kiosk="1"] #kioskTableWrap tbody tr { height: auto !important; }
-body[data-kiosk="1"] #kioskTableWrap tbody td { padding: 8px 8px !important; font-size: 13px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; color: var(--text) !important; border-bottom: 1px solid rgba(255,255,255,0.04) !important; vertical-align: middle !important; height: auto !important; }
+body[data-kiosk="1"] #kioskTableWrap tbody td {
+  padding: 0 14px !important;
+  height: 1% !important;
+  font-size: 16px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  vertical-align: middle !important;
+  height: auto !important;
+}
 body[data-kiosk="1"] #kioskTableWrap tbody tr:last-child td { border-bottom: none !important; }
+body[data-kiosk="1"] #kioskTableWrap .status-pill {
+  font-size: 13px !important;
+  padding: 5px 14px !important;
+}
+body[data-kiosk="1"] #kioskTableWrap .severity-icon { transform: scale(1.2) !important; }
+body[data-kiosk="1"] #kioskTableWrap .table-alert-cell { font-size: 16px !important; gap: 10px !important; }
 body[data-kiosk="1"] #kioskTableWrap thead th:nth-child(1), body[data-kiosk="1"] #kioskTableWrap tbody td:nth-child(1) { width: 17%; }
 body[data-kiosk="1"] #kioskTableWrap thead th:nth-child(2), body[data-kiosk="1"] #kioskTableWrap tbody td:nth-child(2) { width: 8%;  }
 body[data-kiosk="1"] #kioskTableWrap thead th:nth-child(3), body[data-kiosk="1"] #kioskTableWrap tbody td:nth-child(3) { width: 11%; }
